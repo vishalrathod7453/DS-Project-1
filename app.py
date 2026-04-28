@@ -1,78 +1,67 @@
 import streamlit as st
-import numpy as np
 import pickle
+import pandas as pd
+import numpy as np
 
-# -------------------- PAGE CONFIG --------------------
-st.set_page_config(
-    page_title="Student Stress Predictor",
-    page_icon="🚀",
-    layout="centered"
-)
+# Page configuration
+st.set_page_config(page_title="Performance Predictor", page_icon="🎓")
 
-# -------------------- LOAD MODEL --------------------
-model = pickle.load(open("Dsproject1.pkl", "rb"))
-
-# -------------------- CUSTOM CSS --------------------
+# Custom CSS for animation and styling
 st.markdown("""
     <style>
-    body {
-        background: linear-gradient(to right, #141e30, #243b55);
+    @keyframes fadeIn {
+        0% {opacity: 0;}
+        100% {opacity: 1;}
     }
-    .main {
-        background: linear-gradient(to right, #1f4037, #99f2c8);
-        border-radius: 15px;
-        padding: 20px;
-    }
-    .title {
-        text-align: center;
-        font-size: 40px;
-        font-weight: bold;
-        color: white;
+    .main-container {
+        animation: fadeIn 1.5s;
     }
     .stButton>button {
-        background-color: #ff4b2b;
+        background-color: #4CAF50;
         color: white;
         border-radius: 10px;
-        height: 3em;
-        width: 100%;
-        font-size: 18px;
+        transition: transform 0.2s;
     }
     .stButton>button:hover {
-        background-color: #ff416c;
-        transition: 0.3s;
+        transform: scale(1.05);
     }
     </style>
 """, unsafe_allow_html=True)
 
-# -------------------- TITLE --------------------
-st.markdown('<p class="title">📊 Data Science Predictor</p>', unsafe_allow_html=True)
-st.write("### Enter your data below 👇")
+# Load the model
+@st.cache_resource
+def load_model():
+    with open('Dspproject1.pkl', 'rb') as file:
+        return pickle.load(file)
 
-# -------------------- INPUT SECTION --------------------
+model = load_model()
+
+# UI Layout
+st.markdown('<div class="main-container">', unsafe_allow_html=True)
+st.title("🎓 Student Performance Predictor")
+st.subheader("Predict your performance category based on daily habits.")
+
+# User Inputs
 col1, col2 = st.columns(2)
 
 with col1:
-    feature1 = st.number_input("Feature 1", min_value=0.0, step=0.1)
-    feature2 = st.number_input("Feature 2", min_value=0.0, step=0.1)
+    student_id = st.number_input("Student ID", min_value=0, value=1)
+    study_hours = st.slider("Study Hours per Day", 0.0, 24.0, 5.0)
+    sleep_hours = st.slider("Sleep Hours per Day", 0.0, 24.0, 8.0)
 
 with col2:
-    feature3 = st.number_input("Feature 3", min_value=0.0, step=0.1)
-    feature4 = st.number_input("Feature 4", min_value=0.0, step=0.1)
+    social_media_hours = st.slider("Social Media Hours", 0.0, 24.0, 2.0)
+    exam_score = st.number_input("Current Exam Score", min_value=0.0, max_value=100.0, value=75.0)
 
-# -------------------- PREDICTION --------------------
-if st.button("🔮 Predict"):
-    try:
-        input_data = np.array([[feature1, feature2, feature3, feature4]])
-        prediction = model.predict(input_data)
+# Prediction Logic
+if st.button("Predict Result 🚀"):
+    # Create feature array in the exact order the model expects
+    features = pd.DataFrame([[student_id, study_hours, sleep_hours, social_media_hours, exam_score]], 
+                            columns=['id', 'study_hours', 'sleep_hours', 'social_media_hours', 'exam_score'])
+    
+    with st.spinner('Analyzing patterns...'):
+        prediction = model.predict(features)
+        
+    st.success(f"### Predicted Performance Category: {prediction[0]}")
 
-        st.success(f"✅ Prediction: {prediction[0]}")
-
-        # 🎉 Animation effect
-        st.balloons()
-
-    except Exception as e:
-        st.error(f"❌ Error: {e}")
-
-# -------------------- FOOTER --------------------
-st.markdown("---")
-st.markdown("Made with ❤️ using Streamlit")
+st.markdown('</div>', unsafe_allow_html=True)
